@@ -26,6 +26,16 @@ panels = [
         [{"expr": "sum by (pod) (count_over_time({namespace=\"pizza\"} | json | level=\"error\" [1m]))", "legendFormat": "{{pod}}"}], L),
   panel("logs", "Live pizzeria logs", 12, 12, 12, 7, [{"expr": "{namespace=\"pizza\"} | json"}], L, opts={"enableLogDetails": True, "sortOrder": "Descending", "wrapLogMessage": False}),
 ]
+# --- Kubernetes pod health, straight from kube-state-metrics (works even where cAdvisor is empty) ---
+ok_red = {"mode": "absolute", "steps": [{"color": "red", "value": None}, {"color": "green", "value": 1}]}
+panels += [
+  panel("stat", "☸️ Pods running", 0, 19, 6, 4, [{"expr": "sum(kube_pod_status_phase{namespace=\"pizza\", phase=\"Running\"})"}], P,
+        extra={"thresholds": ok_red, "color": {"mode": "thresholds"}}),
+  panel("stat", "✅ Replicas available", 6, 19, 6, 4, [{"expr": "kube_deployment_status_replicas_available{namespace=\"pizza\", deployment=\"pizzeria\"}"}], P,
+        extra={"thresholds": ok_red, "color": {"mode": "thresholds"}}),
+  panel("timeseries", "🔁 Container restarts", 12, 19, 12, 4, [{"expr": "kube_pod_container_status_restarts_total{namespace=\"pizza\", container=\"pizzeria\"}", "legendFormat": "{{pod}}"}], P),
+  panel("timeseries", "Pod ready (1 = ready)", 0, 23, 24, 5, [{"expr": "kube_pod_status_ready{namespace=\"pizza\", condition=\"true\"}", "legendFormat": "{{pod}}"}], P),
+]
 dash = {"uid": "pizzeria", "title": "🍕 Pizzeria", "tags": ["lab"], "timezone": "browser", "schemaVersion": 39, "version": 1,
         "refresh": "5s", "time": {"from": "now-15m", "to": "now"}, "panels": panels}
 json.dump(dash, open("dashboards/pizzeria.json", "w"), indent=2)

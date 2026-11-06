@@ -35,15 +35,18 @@ def log(level, msg, **kw):
 def bake(order_id):
     pizza = random.choice(PIZZAS)
     mode = state["chaos"]
-    duration = random.uniform(0.1, 0.9)
+    started = time.monotonic()
+    # base bake time ~ 0.2-1.2s, with an occasional slow pizza (long tail, like real life)
+    work = random.uniform(0.2, 1.2) + (random.uniform(1, 2) if random.random() < 0.05 else 0)
     if mode == "slow":
-        duration *= random.uniform(3, 8)
+        work *= random.uniform(3, 6)
     status = "ok"
     if mode == "fire" and random.random() < 0.6:
         status = "burnt"
     elif random.random() < 0.02:          # background noise: 2% always fail
         status = "failed"
-    time.sleep(min(duration, 4) / 5)      # keep the demo snappy
+    time.sleep(work)
+    duration = time.monotonic() - started  # MEASURED time, not a made-up number
     with LOCK:
         orders[(pizza, status)] = orders.get((pizza, status), 0) + 1
         for i, b in enumerate(BUCKETS):
@@ -69,7 +72,7 @@ def kitchen():
             target = 480 if mode == "fire" else 250
             state["temp"] += (target - state["temp"]) * 0.1 + random.uniform(-4, 4)
         bake(next(IDS))
-        time.sleep(0.05 if mode == "rush" else random.uniform(0.1, 0.4))
+        time.sleep(0.05 if mode == "rush" else random.uniform(0.1, 0.5))
 
 
 def render_metrics():
@@ -127,6 +130,6 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     log("info", "pizzeria opening", chaos=state["chaos"])
-    for _ in range(int(os.environ.get("COOKS", "2"))):
+    for _ in range(int(os.environ.get("COOKS", "4"))):
         threading.Thread(target=kitchen, daemon=True).start()
     ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
