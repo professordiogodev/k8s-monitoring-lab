@@ -1,0 +1,19 @@
+# Grafana alerting provisioning (alerting as code)
+apiVersion: 1
+policies:
+- orgId: 1
+  receiver: kitchen-log
+  group_by:
+  - alertname
+  - pod
+  group_wait: 5s
+  group_interval: 30s
+  repeat_interval: 1h
+  routes:
+  - receiver: pager
+    object_matchers:
+    - - severity
+      - '='
+      - critical
+    mute_time_intervals:
+    - night-shift

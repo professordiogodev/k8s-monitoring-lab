@@ -24,7 +24,7 @@ prometheus:
     resources:
       requests: {cpu: 100m, memory: 400Mi}
 alertmanager:
-  enabled: false                # alerting is the OTHER lab (Grafana alerting)
+  enabled: false                # we alert with Grafana in Lab 5, no Alertmanager needed
 # Laptop clusters: these control-plane components are not scrapeable, silence the noise
 kubeEtcd: {enabled: false}
 kubeControllerManager: {enabled: false}

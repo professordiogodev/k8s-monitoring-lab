@@ -26,10 +26,14 @@ $K -n pizza create configmap pizzeria-code --from-file="$ROOT/app/pizzeria.py" \
 $K apply -f "$ROOT/manifests/10-pizzeria.yaml"
 $K apply -f "$ROOT/manifests/20-servicemonitor.yaml"
 $K apply -f "$ROOT/manifests/30-prometheusrule.yaml"
+# the pretend pager used by lab 5
+$K -n pizza create configmap webhook-sink-code --from-file="$ROOT/app/webhook_sink.py" \
+  --dry-run=client -o yaml | $K apply -f -
+$K apply -f "$ROOT/manifests/40-webhook-sink.yaml"
 # the dashboard we ship (Grafana's sidecar auto-loads ConfigMaps labelled grafana_dashboard=1)
 $K -n monitoring create configmap pizzeria-dashboard --from-file="$ROOT/dashboards/pizzeria.json" \
   --dry-run=client -o yaml | $K apply -f -
 $K -n monitoring label configmap pizzeria-dashboard grafana_dashboard=1 --overwrite
-$K -n pizza rollout status deploy/pizzeria --timeout=180s
+$K -n pizza rollout status deploy/pizzeria deploy/webhook-sink --timeout=180s
 
 say "Done! Next: ./scripts/pf.sh   (Grafana: http://localhost:3000  admin / pizza)"

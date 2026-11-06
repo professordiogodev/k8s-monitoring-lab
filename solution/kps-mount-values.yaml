@@ -1,0 +1,7 @@
+# Mounts the provisioning files (ConfigMap 'alerting-solution') into the kube-prometheus-stack Grafana.
+grafana:
+  extraConfigmapMounts:
+    - name: alerting-solution
+      mountPath: /etc/grafana/provisioning/alerting
+      configMap: alerting-solution
+      readOnly: true

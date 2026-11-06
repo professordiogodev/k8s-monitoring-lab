@@ -1,0 +1,9 @@
+# Grafana alerting provisioning (alerting as code)
+apiVersion: 1
+muteTimes:
+- orgId: 1
+  name: night-shift
+  time_intervals:
+  - times:
+    - start_time: 02:00
+      end_time: 05:00

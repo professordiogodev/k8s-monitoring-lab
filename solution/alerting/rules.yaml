@@ -1,0 +1,126 @@
+# Grafana alerting provisioning (alerting as code)
+apiVersion: 1
+groups:
+- orgId: 1
+  name: pizzeria
+  folder: Pizzeria
+  interval: 10s
+  rules:
+  - uid: burnt-pizzas
+    title: Burnt pizzas
+    condition: C
+    for: 30s
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+      team: kitchen
+    annotations:
+      summary: '{{ $labels.pod }}: {{ humanizePercentage $values.B.Value }} of pizzas are burnt 🔥'
+      description: Oven on {{ $labels.pod }} is misbehaving. Check the logs!
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        instant: true
+        expr: sum by (pod) (rate(pizzeria_orders_total{status="burnt"}[1m])) / sum by (pod) (rate(pizzeria_orders_total[1m]))
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0.2
+  - uid: slow-oven
+    title: Slow bake time
+    condition: C
+    for: 30s
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      team: kitchen
+    annotations:
+      summary: '{{ $labels.pod }}: p95 bake time is {{ humanizeDuration $values.B.Value }}'
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        instant: true
+        expr: histogram_quantile(0.95, sum by (pod, le) (rate(pizzeria_order_duration_seconds_bucket[1m])))
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 4
+  - uid: error-logs
+    title: Error logs spike
+    condition: C
+    for: 30s
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      team: kitchen
+    annotations:
+      summary: '{{ $labels.pod }}: {{ humanize $values.B.Value }} error log lines in the last minute (from Loki)'
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: loki
+      model:
+        refId: A
+        queryType: instant
+        expr: sum by (pod) (count_over_time({namespace="pizza"} | json | level="error" [1m]))
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 10

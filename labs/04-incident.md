@@ -42,4 +42,4 @@ Watch the metrics recover. 🎉
 
 Pair up: one person runs `chaos.sh random` while the other looks away. Swap. Fastest diagnosis wins pizza.
 
-**Next:** turn this pain into an alert → the [`grafana-alerting-lab`](https://github.com/professordiogodev/grafana-alerting-lab).
+**Next:** turn this pain into an alert → [Lab 5, alerting in Grafana](05-alerting.md).

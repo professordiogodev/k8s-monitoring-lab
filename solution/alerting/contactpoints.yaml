@@ -1,0 +1,17 @@
+# Grafana alerting provisioning (alerting as code)
+apiVersion: 1
+contactPoints:
+- orgId: 1
+  name: kitchen-log
+  receivers:
+  - uid: kitchen-log
+    type: webhook
+    settings:
+      url: http://webhook-sink.pizza.svc:8080/kitchen
+- orgId: 1
+  name: pager
+  receivers:
+  - uid: pager
+    type: webhook
+    settings:
+      url: http://webhook-sink.pizza.svc:8080/pager
