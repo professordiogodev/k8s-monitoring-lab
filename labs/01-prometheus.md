@@ -73,7 +73,27 @@ node_load1
 kubectl -n pizza delete pod -l app=pizzeria --wait=false
 ```
 
-Graph `kube_deployment_status_replicas_available{namespace="pizza"}` and `up{namespace="pizza"}`. How long was the dip? Do the pod names in `up` change?
+Graph `kube_deployment_status_replicas_available{namespace="pizza"}` and `up{namespace="pizza"}`.
+
+🤔 **You probably saw... almost nothing.** Kubernetes replaces a deleted pod within seconds, and Prometheus only looks every 5s, so the dip is too short to catch (if at all). Look at what *did* change: the pod names in `up` are new, the old ones are gone. Healing so fast is great for users but means "the pod died" often leaves little trace in metrics. (That's why `kube_pod_container_status_restarts_total` and alerts on it matter.)
+
+Now make a **lasting** change, so you can see Kubernetes state moving in the graphs. Rescale the deployment:
+
+```bash
+kubectl -n pizza scale deploy/pizzeria --replicas=1   # watch the numbers go DOWN
+kubectl -n pizza scale deploy/pizzeria --replicas=4   # ...and UP
+kubectl -n pizza scale deploy/pizzeria --replicas=2   # back to normal
+```
+
+After each command (wait ~10s), check:
+
+```promql
+kube_deployment_spec_replicas{namespace="pizza"}              # what you asked for
+kube_deployment_status_replicas_available{namespace="pizza"}  # what is really running
+count(up{namespace="pizza", job="pizzeria"})                  # targets Prometheus scrapes
+```
+
+Do the three lines agree right away? Which one reacts first when you scale up, and why? (hints: our pizzeria is scraped every 5s but kube-state-metrics only every 30s, and a new pod must pass its readiness probe)
 
 ## 5. Break something (5 min)
 
