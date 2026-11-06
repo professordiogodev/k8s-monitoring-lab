@@ -42,6 +42,9 @@ sum by (pizza) (rate(pizzeria_orders_total[1m]))
 
 ## 3. Latency with histograms (5 min)
 
+> Diogo's Todo:
+> Change the pizzeria_order_duration_seconds_bucket to a more realistic value (you can skip this part)
+
 ```promql
 histogram_quantile(0.95,
   sum by (le) (rate(pizzeria_order_duration_seconds_bucket[1m])))
