@@ -1,0 +1,14 @@
+# 🎯 "Hey Prometheus, please scrape anything matching this Service."
+# (Our Prometheus is configured to select ALL ServiceMonitors - see helm/kps-values.yaml)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pizzeria
+  namespace: pizza
+spec:
+  selector:
+    matchLabels: {app: pizzeria}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 5s

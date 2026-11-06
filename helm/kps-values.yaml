@@ -1,0 +1,32 @@
+# kube-prometheus-stack: Prometheus Operator + Prometheus + Grafana + node-exporter + kube-state-metrics
+fullnameOverride: kps
+grafana:
+  adminPassword: pizza          # lab only! never do this in real life
+  defaultDashboardsTimezone: browser
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL      # pick up ConfigMaps labelled grafana_dashboard=1 from any namespace
+  # Teach Grafana about Loki (installed in the next step)
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki
+      access: proxy
+      url: http://loki.monitoring.svc:3100
+prometheus:
+  prometheusSpec:
+    # Without this, Prometheus only selects ServiceMonitors labelled release=kps.
+    # We want it to find ALL of them, so flip the default off.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    retention: 6h
+    resources:
+      requests: {cpu: 100m, memory: 400Mi}
+alertmanager:
+  enabled: false                # alerting is the OTHER lab (Grafana alerting)
+# Laptop clusters: these control-plane components are not scrapeable, silence the noise
+kubeEtcd: {enabled: false}
+kubeControllerManager: {enabled: false}
+kubeScheduler: {enabled: false}
+kubeProxy: {enabled: false}

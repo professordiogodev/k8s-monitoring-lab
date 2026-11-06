@@ -1,0 +1,23 @@
+# 📏 Recording + alerting rules, evaluated by Prometheus itself.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pizzeria
+  namespace: pizza
+spec:
+  groups:
+    - name: pizzeria.rules
+      rules:
+        - record: pizzeria:orders:rate1m
+          expr: sum by (status) (rate(pizzeria_orders_total[1m]))
+        - record: pizzeria:burnt_ratio:rate1m
+          expr: |
+            sum(rate(pizzeria_orders_total{status="burnt"}[1m]))
+            /
+            sum(rate(pizzeria_orders_total[1m]))
+        - alert: PizzaBurning
+          expr: pizzeria:burnt_ratio:rate1m > 0.2
+          for: 30s
+          labels: {severity: critical}
+          annotations:
+            summary: "More than 20% of pizzas are burnt 🔥"

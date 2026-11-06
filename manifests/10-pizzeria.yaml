@@ -1,0 +1,43 @@
+# The app code itself lives in a ConfigMap (created from app/pizzeria.py by scripts/up.sh)
+# so there is NO image to build or push. Just python:3.12-alpine + our script.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pizzeria
+  namespace: pizza
+  labels: {app: pizzeria}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: pizzeria}
+  template:
+    metadata:
+      labels: {app: pizzeria}
+    spec:
+      containers:
+        - name: pizzeria
+          image: python:3.12-alpine
+          command: ["python", "-u", "/app/pizzeria.py"]
+          ports:
+            - {name: http, containerPort: 8080}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 64Mi}
+          volumeMounts:
+            - {name: code, mountPath: /app}
+      volumes:
+        - name: code
+          configMap: {name: pizzeria-code}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pizzeria
+  namespace: pizza
+  labels: {app: pizzeria}
+spec:
+  selector: {app: pizzeria}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
